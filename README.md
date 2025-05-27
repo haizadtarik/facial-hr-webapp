@@ -59,32 +59,52 @@ A Next.js web application that uses remote photoplethysmography (rPPG) technolog
 
 ## 🚀 Deployment
 
-### Vercel Deployment
+### Vercel Deployment (Recommended)
 
-1. **Connect to Vercel**
-   - Push your code to GitHub
-   - Import the project in Vercel
-   - Configure environment variables in Vercel dashboard
+This application is optimized for Vercel deployment with automatic HTTPS/HTTP proxy handling.
 
-2. **Environment Variables**
-   Set in Vercel dashboard:
+**Live Demo**: [https://facial-hr-webapp-2zadr1zgc-haizadtarik-gmailcoms-projects.vercel.app](https://facial-hr-webapp-2zadr1zgc-haizadtarik-gmailcoms-projects.vercel.app)
+
+#### Quick Deploy Steps
+
+1. **Deploy via Vercel CLI**
+   ```bash
+   npm install -g vercel
+   vercel --prod
    ```
-   NEXT_PUBLIC_API_BASE_URL=<your-api-backend-url>
+
+2. **Configure Environment Variables**
+   In Vercel dashboard, add:
+   ```
+   NEXT_PUBLIC_API_BASE_URL=http://44.202.123.117:8000
    ```
 
-3. **Deploy**
-   Vercel will automatically deploy on every push to main branch.
+3. **Automatic Proxy Handling**
+   - The app automatically detects Vercel deployment
+   - Routes API calls through Next.js proxy endpoints
+   - Eliminates HTTPS/HTTP mixed content issues
+
+#### How HTTPS/HTTP Proxy Works
+```
+Browser (HTTPS) → Vercel (HTTPS) → Next.js Proxy → Backend API (HTTP)
+```
+
+The application includes built-in proxy routes at:
+- `/api/create-session` → backend `/create-session`
+- `/api/analyze-image` → backend `/analyze-image`
+- `/api/session/[id]/status` → backend `/session/[id]/status`
+
+### Alternative Deployment
+- **Netlify**: Compatible with static export
+- **Docker**: Use included Dockerfile for containerized deployment
+- **Traditional hosting**: Build and serve static files
 
 ## 📖 Usage
 
-### Main Application
-- Navigate to `/` for the main heart rate monitoring interface
+### Main Application (`/test`)
+- Primary heart rate monitoring interface
 - Allow camera permissions when prompted
-- The application will automatically start detecting your heart rate
-
-### Debug Mode
-- Navigate to `/debug` for debugging and testing camera functionality
-- Use `/test` for manual testing and API interaction
+- Real-time heart rate detection and display
 
 ### API Integration
 The application connects to a FastAPI backend that provides:
@@ -92,6 +112,10 @@ The application connects to a FastAPI backend that provides:
 - Image analysis
 - Heart rate detection
 - Status monitoring
+
+### Architecture
+- **Development**: Direct HTTP requests to backend API
+- **Production (Vercel)**: Automatic proxy routing through Next.js API routes
 
 ## 🐛 Troubleshooting
 
