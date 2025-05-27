@@ -18,7 +18,11 @@ export const metadata: Metadata = {
   description: "Real-time heart rate detection using facial video analysis",
   keywords: ["heart rate", "rPPG", "facial analysis", "health monitoring"],
   authors: [{ name: "Your Name" }],
-  viewport: "width=device-width, initial-scale=1",
+};
+
+export const viewport = {
+  width: "device-width",
+  initialScale: 1,
 };
 
 export default function RootLayout({

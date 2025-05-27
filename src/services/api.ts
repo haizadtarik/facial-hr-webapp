@@ -56,7 +56,16 @@ class ApiService {
         return response;
       },
       (error) => {
-        console.warn('API Response Error:', error.response?.data || error.message);
+        // Don't log 404 errors for session deletion as they're expected
+        const isSessionDelete = error.config?.url?.includes('/session/') && 
+                               error.config?.method === 'delete';
+        const is404 = error.response?.status === 404;
+        
+        if (isSessionDelete && is404) {
+          console.log('Session delete 404 (expected):', error.config.url);
+        } else {
+          console.warn('API Response Error:', error.response?.data || error.message);
+        }
         return Promise.reject(error);
       }
     );
@@ -71,7 +80,7 @@ class ApiService {
     } catch (error: unknown) {
       const errorObj = error as Error & { 
         code?: string; 
-        response?: { status?: number; data?: unknown } 
+        response?: { status?: number; data?: { detail?: string } } 
       };
       console.warn('Failed to create session - Full error:', errorObj);
       console.warn('Error response:', errorObj.response?.data);
@@ -79,8 +88,14 @@ class ApiService {
       console.warn('Error message:', errorObj.message);
       console.warn('Using proxy:', this.useProxy);
       
-      // Provide more specific error messages
-      if (errorObj.code === 'ECONNREFUSED') {
+      // Handle specific API errors
+      if (errorObj.response?.status === 429) {
+        const errorData = errorObj.response.data;
+        if (errorData?.detail === 'Maximum number of sessions reached') {
+          throw new Error('API server is at capacity. Please try again in a few minutes or contact support.');
+        }
+        throw new Error('Too many requests - please wait and try again');
+      } else if (errorObj.code === 'ECONNREFUSED') {
         throw new Error('Cannot connect to API server - server may be down or unreachable');
       } else if (errorObj.response?.status === 404) {
         throw new Error('API endpoint not found - check API server configuration');
@@ -124,10 +139,35 @@ class ApiService {
     } catch (error: unknown) {
       const errorObj = error as Error & { 
         code?: string; 
-        response?: { status?: number; data?: unknown } 
+        response?: { status?: number; data?: { detail?: string } } 
       };
       console.warn('Failed to get session status:', errorObj);
       throw new Error(`Failed to get session status: ${errorObj.message || 'Unknown error'}`);
+    }
+  }
+
+  async deleteSession(sessionId: string): Promise<void> {
+    try {
+      const endpoint = this.useProxy 
+        ? `/session/${sessionId}`
+        : `/session/${sessionId}`;
+      
+      await this.api.delete(endpoint);
+      console.log(`Session ${sessionId} deleted successfully`);
+    } catch (error: unknown) {
+      const errorObj = error as Error & { 
+        code?: string; 
+        response?: { status?: number; data?: { detail?: string } } 
+      };
+      
+      // Handle specific error cases
+      if (errorObj.response?.status === 404) {
+        console.log(`Session ${sessionId} was already deleted or doesn't exist`);
+        return; // Not an error - session is already gone
+      }
+      
+      console.warn(`Failed to delete session ${sessionId}:`, errorObj.response?.data?.detail || errorObj.message);
+      // Don't throw error for delete failures as it's not critical
     }
   }
 }
